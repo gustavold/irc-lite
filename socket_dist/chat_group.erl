@@ -32,6 +32,9 @@ group_controller([]) ->
     exit(allGone);
 group_controller(L) ->
     receive
+        {chan, C, {listar}} -> 
+	    send(C, {listar, build_user_list(L)}),
+	    group_controller(L);
 	{chan, C, {relay, Nick, Str}} ->
 	    foreach(fun({Pid,_}) -> send(Pid, {msg,Nick,C,Str}) end, L),
 	    group_controller(L);
@@ -48,4 +51,7 @@ group_controller(L) ->
 	    io:format("group controller received Msg=~p~n", [Any]),
 	    group_controller(L)
     end.
+
+build_user_list(L) -> lists:map(fun({_,Nick}) -> Nick end, L).
+
 

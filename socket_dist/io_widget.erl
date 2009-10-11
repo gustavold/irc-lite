@@ -13,7 +13,7 @@
 	 set_handler/2, 
 	 set_prompt/2,
 	 set_state/2,
-	 set_title/2, insert_str/2, update_state/3]).
+	 set_title/2, insert_str/2, update_state/3, user_list/2]).
 
 start(Pid) ->
     gs:start(),
@@ -26,6 +26,7 @@ set_prompt(Pid, Str)    -> Pid ! {prompt, Str}.
 set_state(Pid, State)   -> Pid ! {state, State}.
 insert_str(Pid, Str)    -> Pid ! {insert, Str}.
 update_state(Pid, N, X) -> Pid ! {updateState, N, X}. 
+user_list(Pid, L)	-> Pid ! {userList, L}.
 
 rpc(Pid, Q) ->    
     Pid ! {self(), Q},
@@ -69,6 +70,10 @@ loop(Win, Pid, Prompt, State, Parse) ->
 	    loop(Win, Pid, Prompt, State, Parse);
 	{insert, Str} ->
 	    gs:config(editor, {insert,{'end',Str}}),
+	    scroll_to_show_last_line(),
+	    loop(Win, Pid, Prompt, State, Parse);
+	{userList, L} ->
+	    lists:foreach(fun(U) -> gs:config(editor, {insert, {'end', U ++ "\n"}}) end, L),
 	    scroll_to_show_last_line(),
 	    loop(Win, Pid, Prompt, State, Parse);
 	{updateState, N, X} ->
