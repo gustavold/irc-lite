@@ -72,12 +72,16 @@ wait_login_response(Widget, MM) ->
 
 active(Widget, MM) ->
      receive
-     	 {Widget, Nick, "list"} ->
+     	 {Widget, Nick, {listar}} ->
 	     io:format("fazendo um list~n"),
 	     lib_chan_mm:send(MM, {listar}),
 	     active(Widget, MM);
-	 {Widget, Nick, Str} ->
-	     lib_chan_mm:send(MM, {relay, Nick, Str}),
+	 {Widget, Nick, {relay, Msg}} ->
+	     lib_chan_mm:send(MM, {relay, Nick, Msg}),
+	     active(Widget, MM);
+	 {Widget, Nick, {priv, Dst, Str}} ->
+	     io:format("mensagem privada~n"),
+	     lib_chan_mm:send(MM, {private, Nick, Dst, Str}),
 	     active(Widget, MM);
 	 {chan, MM, {listar, L}} ->
 	     user_list(Widget, L),
@@ -122,7 +126,19 @@ sleep(T) ->
 to_str(Term) ->
     io_lib:format("~p~n",[Term]).
 
-parse_command(Str) -> skip_to_gt(Str).
+parse_command(Str) -> 
+    case skip_to_gt(Str) of
+        " /list" ->
+	    io:format("cliente mandou listar~n"),
+	    {listar};
+        " /priv " ++ Str2 ->
+	    io:format("cliente mandou privado~n"),
+	    [Dst, Msg] = re:split(Str2, "[ ]+", [{return, list}, {parts, 2}]),
+	    {priv, Dst, Msg};
+	Msg ->
+	    io:format("cliente mandou mensagem: ~p~n", [Msg]),
+	    {relay, Msg}
+    end.
 
 skip_to_gt(">" ++ T) -> T;
 skip_to_gt([_|T])    -> skip_to_gt(T);
