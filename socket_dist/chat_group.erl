@@ -38,6 +38,10 @@ group_controller(L) ->
 	{chan, C, {relay, Nick, Str}} ->
 	    foreach(fun({Pid,_}) -> send(Pid, {msg,Nick,C,Str}) end, L),
 	    group_controller(L);
+	{chan, C, {private, From, To, Msg}} ->
+            L2 = [C | [Pid || {Pid, Nick} <- L, Nick =:= To]],
+	    foreach(fun(P) -> send(P, {msg, From, C, Msg}) end, L2),
+	    group_controller(L);
 	{login, C, Nick} ->
 	    controller(C, self()),
 	    send(C, ack),
