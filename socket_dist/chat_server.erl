@@ -30,6 +30,9 @@ start_server() ->
 
 server_loop(L) ->
     receive
+        {groups, C} ->
+	     lib_chan_mm:send(C, {groups, [G || {G, _} <- L]}),
+	     server_loop(L);
 	{mm, Channel, {login, Group, Nick}} ->
 	    case lookup(Group, L) of
 		{ok, Pid} ->

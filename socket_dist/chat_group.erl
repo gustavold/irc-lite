@@ -32,6 +32,9 @@ group_controller([]) ->
     exit(allGone);
 group_controller(L) ->
     receive
+        {chan, C, {groups}} -> 
+	    chat_server ! {groups, C},
+	    group_controller(L);
         {chan, C, {listar}} -> 
 	    send(C, {listar, build_user_list(L)}),
 	    group_controller(L);

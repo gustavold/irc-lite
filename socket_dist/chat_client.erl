@@ -10,7 +10,8 @@
 
 -import(io_widget, 
 	[get_state/1, insert_str/2, set_prompt/2, set_state/2, 
-	 set_title/2, set_handler/2, update_state/3, user_list/2]).
+	 set_title/2, set_handler/2, update_state/3, user_list/2,
+	 group_list/2]).
 
 -export([start/0, test/0, connect/5]).
 
@@ -22,8 +23,8 @@ start() ->
 test() ->
     connect("localhost", 2223, "AsDT67aQ", "general", "joe"),
     connect("localhost", 2223, "AsDT67aQ", "general", "jane"),
-    connect("localhost", 2223, "AsDT67aQ", "general", "jim"),
-    connect("localhost", 2223, "AsDT67aQ", "general", "sue").
+    connect("localhost", 2223, "AsDT67aQ", "fail", "jim"),
+    connect("localhost", 2223, "AsDT67aQ", "fail", "sue").
 	   
 
 connect(Host, Port, HostPsw, Group, Nick) ->
@@ -72,6 +73,9 @@ wait_login_response(Widget, MM) ->
 
 active(Widget, MM) ->
      receive
+     	 {Widget, Nick, {groups}} ->
+	     lib_chan_mm:send(MM, {groups}),
+	     active(Widget, MM);
      	 {Widget, Nick, {listar}} ->
 	     io:format("fazendo um list~n"),
 	     lib_chan_mm:send(MM, {listar}),
@@ -82,6 +86,9 @@ active(Widget, MM) ->
 	 {Widget, Nick, {priv, Dst, Str}} ->
 	     io:format("mensagem privada~n"),
 	     lib_chan_mm:send(MM, {private, Nick, Dst, Str}),
+	     active(Widget, MM);
+	 {chan, MM, {groups, L}} ->
+	     group_list(Widget, L),
 	     active(Widget, MM);
 	 {chan, MM, {listar, L}} ->
 	     user_list(Widget, L),
@@ -129,6 +136,9 @@ to_str(Term) ->
 parse_command(Str) -> 
     case skip_to_gt(Str) of
         " /list" ->
+	    io:format("cliente mandou /list~n"),
+	    {groups};
+        " /who" ->
 	    io:format("cliente mandou listar~n"),
 	    {listar};
         " /priv " ++ Str2 ->
