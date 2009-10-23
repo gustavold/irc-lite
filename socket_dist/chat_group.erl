@@ -18,6 +18,7 @@ start(C, Nick) ->
     controller(C, self()),
     send(C, ack),
     self() ! {chan, C, {relay, Nick, "I'm starting the group"}},
+    self() ! {chan, C, {listar}}, 
     group_controller([{C,Nick}]).
 
 
@@ -39,6 +40,7 @@ group_controller(L) ->
 	    send(C, {listar, build_user_list(L)}),
 	    group_controller(L);
 	{chan, C, {relay, Nick, Str}} ->
+	    io:format("chat_group: relaying~n"),
 	    foreach(fun({Pid,_}) -> send(Pid, {msg,Nick,C,Str}) end, L),
 	    group_controller(L);
 	{chan, C, {private, From, To, Msg}} ->

@@ -21,14 +21,14 @@ start() ->
 
 
 test() ->
-    connect("localhost", 2223, "AsDT67aQ", "general", "joe"),
-    connect("localhost", 2223, "AsDT67aQ", "general", "jane"),
-    connect("localhost", 2223, "AsDT67aQ", "general", "aaa"),
-    connect("localhost", 2223, "AsDT67aQ", "general", "bbb"),
-    connect("localhost", 2223, "AsDT67aQ", "fail", "ccc"),
-    connect("localhost", 2223, "AsDT67aQ", "fail", "ddd"),
-    connect("localhost", 2223, "AsDT67aQ", "fail", "jim"),
-    connect("localhost", 2223, "AsDT67aQ", "fail", "sue").
+  %  connect("localhost", 2223, "AsDT67aQ", "general", "joe"),
+  %  connect("localhost", 2223, "AsDT67aQ", "general", "jane"),
+  %  connect("localhost", 2223, "AsDT67aQ", "general", "aaa"),
+  %  connect("localhost", 2223, "AsDT67aQ", "general", "bbb"),
+  %  connect("localhost", 2223, "AsDT67aQ", "fail", "ccc"),
+  %  connect("localhost", 2223, "AsDT67aQ", "fail", "ddd"),
+    connect("localhost", 2223, "AsDT67aQ", "xuxxa", "jo").
+  %  connect("localhost", 2223, "AsDT67aQ", "fail", "sue").
 	   
 
 connect(Host, Port, HostPsw, Group, Nick) ->
@@ -42,23 +42,57 @@ handler(Host, Port, HostPsw, Group, Nick) ->
     set_prompt(Widget, [Nick, " > "]),
     set_handler(Widget, fun parse_command/1),
     start_connector(Host, Port, HostPsw),    
-    disconnected(Widget, Group, Nick).
+    disconnected(Widget, Group, Nick, HostPsw).
 
 
-disconnected(Widget, Group, Nick) ->
+disconnected(Widget, Group, Nick, Pwd) ->
     receive
 	{connected, MM} ->
 	    insert_str(Widget, "connected to server\nsending data\n"),
+	    lib_chan_mm:send(MM, {lookup, Group}),
+	    wait_lookup_response(Widget, MM, Group, Nick, Pwd);
+	{Widget, destroyed} ->
+	    exit(died);
+	{status, S} ->
+	    insert_str(Widget, to_str(S)),
+	    disconnected(Widget, Group, Nick, Pwd);
+	Other ->
+	    io:format("chat_client disconnected unexpected:~p~n",[Other]),
+	    disconnected(Widget, Group, Nick, Pwd)
+    end.
+
+wait_lookup_response(Widget, MM, Group, Nick, Pwd) ->
+    receive
+	{chan, MM, {lookup, Group, notfound}} ->
+	    io:format("lookup response: ~p notfound~n",[Group]), 
+	    spawn(chat_server, start, ["group.conf"]),
+	    start_connector("localhost", 2224, Pwd),
+	    {ok, [{IP,_,_}|_]} = inet:getif(),
+	    lib_chan_mm:send(MM, {register_group, Group, inet_parse:ntoa(IP)}),
+	    joining_group(Widget, Group, Nick); 
+        {chan, MM, {lookup, Group, Host}} -> 
+	    io:format("lookup response: ~p found: ~p~n",[Group,Host]), 
+	    start_connector(Host, 2224, Pwd),
+	    joining_group(Widget, Group, Nick);
+	Other -> 
+	    io:format("chat_client lookup unexpected:~p~n",[Other]),
+	    wait_lookup_response(Widget,  MM, Group, Nick, Pwd)
+    end.
+
+joining_group(Widget, Group, Nick) ->
+    receive
+	{connected, MM} ->
+	    insert_str(Widget, "connected to group\nsending data\n"),
 	    lib_chan_mm:send(MM, {login, Group, Nick}),
 	    wait_login_response(Widget, MM);
 	{Widget, destroyed} ->
 	    exit(died);
 	{status, S} ->
 	    insert_str(Widget, to_str(S)),
-	    disconnected(Widget, Group, Nick);
+	    joining_group(Widget, Group, Nick);
 	Other ->
 	    io:format("chat_client disconnected unexpected:~p~n",[Other]),
-	    disconnected(Widget, Group, Nick)
+	    joining_group(Widget, Group, Nick)
     end.
 
 
@@ -76,10 +110,10 @@ wait_login_response(Widget, MM) ->
 
 active(Widget, MM) ->
      receive
-     	 {Widget, Nick, {groups}} ->
+     	 {Widget, _Nick, {groups}} ->
 	     lib_chan_mm:send(MM, {groups}),
 	     active(Widget, MM);
-     	 {Widget, Nick, {listar}} ->
+     	 {Widget, _Nick, {listar}} ->
 	     lib_chan_mm:send(MM, {listar}),
 	     active(Widget, MM);
 	 {Widget, Nick, {relay, Msg}} ->
