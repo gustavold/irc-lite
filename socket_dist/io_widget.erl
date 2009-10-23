@@ -14,7 +14,7 @@
 	 set_prompt/2,
 	 set_state/2,
 	 set_title/2, insert_str/2, update_state/3, 
-	 user_list/2, group_list/2]).
+	 user_list/2, group_list/2, update_user_list/2]).
 
 start(Pid) ->
     gs:start(),
@@ -27,6 +27,7 @@ set_prompt(Pid, Str)    -> Pid ! {prompt, Str}.
 set_state(Pid, State)   -> Pid ! {state, State}.
 insert_str(Pid, Str)    -> Pid ! {insert, Str}.
 update_state(Pid, N, X) -> Pid ! {updateState, N, X}. 
+update_user_list(Pid, L)	-> Pid ! {updateUserList, L}.
 user_list(Pid, L)	-> Pid ! {userList, L}.
 group_list(Pid, L)	-> Pid ! {groupList, L}.
 
@@ -41,16 +42,20 @@ widget(Pid) ->
     Size = [{width,500},{height,200}],
     Win = gs:window(gs:start(),
 		    [{map,true},{configure,true},{title,"window"}|Size]),
-    gs:frame(packer, Win,[{packer_x, [{stretch,1,500}]},
+    gs:frame(packer, Win,[{packer_x, [{stretch,1,100},{stretch,1,400}]},
 			  {packer_y, [{stretch,10,120,100},
 				      {stretch,1,15,15}]}]),
-    gs:create(editor,editor,packer, [{pack_x,1},{pack_y,1},{vscroll,right}]),
-    gs:create(entry, entry, packer, [{pack_x,1},{pack_y,2},{keypress,true}]),
+    gs:create(editor,editor,packer, [{pack_x,2},{pack_y,1},{vscroll,right}]),
+    gs:create(editor,user_list,packer, [{pack_x,1},{pack_y,1}]),
+    gs:create(entry, entry, packer, [{pack_x,2},{pack_y,2},{keypress,true}]),
     gs:config(packer, Size),
     Prompt = " > ",
     State = nil,
     gs:config(entry, {insert,{0,Prompt}}),
     loop(Win, Pid, Prompt, State, fun parse/1). 
+
+
+
 
 loop(Win, Pid, Prompt, State, Parse) ->   
     receive
@@ -81,6 +86,10 @@ loop(Win, Pid, Prompt, State, Parse) ->
 	{userList, L} ->
 	    lists:foreach(fun(U) -> gs:config(editor, {insert, {'end', U ++ "\n"}}) end, L),
 	    scroll_to_show_last_line(),
+	    loop(Win, Pid, Prompt, State, Parse);
+	{updateUserList, L} ->
+	 		gs:config(user_list, clear), 
+	    lists:foreach(fun(U) -> gs:config(user_list, {insert, {'end', U ++ "\n"}}) end, L),
 	    loop(Win, Pid, Prompt, State, Parse);
 	{updateState, N, X} ->
 	    io:format("setelemtn N=~p X=~p Satte=~p~n",[N,X,State]),

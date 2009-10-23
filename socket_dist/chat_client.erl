@@ -11,7 +11,7 @@
 -import(io_widget, 
 	[get_state/1, insert_str/2, set_prompt/2, set_state/2, 
 	 set_title/2, set_handler/2, update_state/3, user_list/2,
-	 group_list/2]).
+	 group_list/2, update_user_list/2]).
 
 -export([start/0, test/0, connect/5]).
 
@@ -40,13 +40,21 @@ handler(Host, Port, HostPsw, Group, Nick) ->
     start_connector(Host, Port, HostPsw),    
     disconnected(Widget, Group, Nick).
 
-
+list_updater(MM) ->
+	receive
+		cancel ->
+			void
+	after 5000 ->
+		lib_chan_mm:send(MM, {listar}),
+		list_updater(MM)
+	end. 
 
 disconnected(Widget, Group, Nick) ->
     receive
 	{connected, MM} ->
 	    insert_str(Widget, "connected to server\nsending data\n"),
 	    lib_chan_mm:send(MM, {login, Group, Nick}),
+	   	spawn(fun() -> list_updater(MM) end),%------------------------------------update_user_list(Widget, L),
 	    wait_login_response(Widget, MM);
 	{Widget, destroyed} ->
 	    exit(died);
@@ -91,7 +99,7 @@ active(Widget, MM) ->
 	     group_list(Widget, L),
 	     active(Widget, MM);
 	 {chan, MM, {listar, L}} ->
-	     user_list(Widget, L),
+	     update_user_list(Widget, L),
 	     active(Widget, MM);
 	 {chan, MM, {msg, From, Pid, Str}} ->
 	     insert_str(Widget, [From,"@",pid_to_list(Pid)," ", Str, "\n"]),
