@@ -49,10 +49,12 @@ group_controller(L) ->
 	    controller(C, self()),
 	    send(C, ack),
 	    self() ! {chan, C, {relay, Nick, "I'm joining the group"}},
+	    [self() ! {chan, C, {listar}} || {C, _} <- [{C,x}|L]],
 	    group_controller([{C,Nick}|L]);
 	{chan_closed, C} ->
 	    {Nick, L1} = delete(C, L, []),
 	    self() ! {chan, C, {relay, Nick, "I'm leaving the group"}},
+	    [self() ! {chan, C, {listar}} || {C, _} <- L1],
 	    group_controller(L1);
 	Any ->
 	    io:format("group controller received Msg=~p~n", [Any]),

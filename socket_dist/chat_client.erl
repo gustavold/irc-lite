@@ -23,6 +23,10 @@ start() ->
 test() ->
     connect("localhost", 2223, "AsDT67aQ", "general", "joe"),
     connect("localhost", 2223, "AsDT67aQ", "general", "jane"),
+    connect("localhost", 2223, "AsDT67aQ", "general", "aaa"),
+    connect("localhost", 2223, "AsDT67aQ", "general", "bbb"),
+    connect("localhost", 2223, "AsDT67aQ", "fail", "ccc"),
+    connect("localhost", 2223, "AsDT67aQ", "fail", "ddd"),
     connect("localhost", 2223, "AsDT67aQ", "fail", "jim"),
     connect("localhost", 2223, "AsDT67aQ", "fail", "sue").
 	   
@@ -40,21 +44,12 @@ handler(Host, Port, HostPsw, Group, Nick) ->
     start_connector(Host, Port, HostPsw),    
     disconnected(Widget, Group, Nick).
 
-list_updater(MM) ->
-	receive
-		cancel ->
-			void
-	after 5000 ->
-		lib_chan_mm:send(MM, {listar}),
-		list_updater(MM)
-	end. 
 
 disconnected(Widget, Group, Nick) ->
     receive
 	{connected, MM} ->
 	    insert_str(Widget, "connected to server\nsending data\n"),
 	    lib_chan_mm:send(MM, {login, Group, Nick}),
-	   	spawn(fun() -> list_updater(MM) end),%------------------------------------update_user_list(Widget, L),
 	    wait_login_response(Widget, MM);
 	{Widget, destroyed} ->
 	    exit(died);
@@ -85,14 +80,12 @@ active(Widget, MM) ->
 	     lib_chan_mm:send(MM, {groups}),
 	     active(Widget, MM);
      	 {Widget, Nick, {listar}} ->
-	     io:format("fazendo um list~n"),
 	     lib_chan_mm:send(MM, {listar}),
 	     active(Widget, MM);
 	 {Widget, Nick, {relay, Msg}} ->
 	     lib_chan_mm:send(MM, {relay, Nick, Msg}),
 	     active(Widget, MM);
 	 {Widget, Nick, {priv, Dst, Str}} ->
-	     io:format("mensagem privada~n"),
 	     lib_chan_mm:send(MM, {private, Nick, Dst, Str}),
 	     active(Widget, MM);
 	 {chan, MM, {groups, L}} ->
