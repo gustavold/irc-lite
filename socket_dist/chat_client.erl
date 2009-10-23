@@ -27,7 +27,7 @@ test() ->
   %  connect("localhost", 2223, "AsDT67aQ", "general", "bbb"),
   %  connect("localhost", 2223, "AsDT67aQ", "fail", "ccc"),
   %  connect("localhost", 2223, "AsDT67aQ", "fail", "ddd"),
-    connect("localhost", 2223, "AsDT67aQ", "general", "jo").
+    connect("192.168.1.139", 2223, "AsDT67aQ", "general", "jo").
   %  connect("localhost", 2223, "AsDT67aQ", "fail", "sue").
 	   
 
