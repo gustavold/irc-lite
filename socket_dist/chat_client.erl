@@ -27,7 +27,7 @@ test() ->
   %  connect("localhost", 2223, "AsDT67aQ", "general", "bbb"),
   %  connect("localhost", 2223, "AsDT67aQ", "fail", "ccc"),
   %  connect("localhost", 2223, "AsDT67aQ", "fail", "ddd"),
-    connect("localhost", 2223, "AsDT67aQ", "xuxxa", "jo").
+    connect("localhost", 2223, "AsDT67aQ", "general", "jo").
   %  connect("localhost", 2223, "AsDT67aQ", "fail", "sue").
 	   
 
@@ -67,8 +67,7 @@ wait_lookup_response(Widget, MM, Group, Nick, Pwd) ->
 	    io:format("lookup response: ~p notfound~n",[Group]), 
 	    spawn(chat_server, start, ["group.conf"]),
 	    start_connector("localhost", 2224, Pwd),
-	    {ok, [{IP,_,_}|_]} = inet:getif(),
-	    lib_chan_mm:send(MM, {register_group, Group, inet_parse:ntoa(IP)}),
+	    lib_chan_mm:send(MM, {register_group, Group, os:getenv("chat_host")}),
 	    joining_group(Widget, Group, Nick); 
         {chan, MM, {lookup, Group, Host}} -> 
 	    io:format("lookup response: ~p found: ~p~n",[Group,Host]), 
