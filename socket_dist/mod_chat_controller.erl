@@ -12,7 +12,6 @@
 
 start(MM, _, _) ->
     process_flag(trap_exit, true),
-    io:format("mod_chat_controller off we go ...~p~n",[MM]),
     loop(MM).
 
 loop(MM) ->
@@ -20,6 +19,9 @@ loop(MM) ->
 	 {chan, MM, Msg} ->
 	     chat_server ! {mm, MM, Msg},
 	     loop(MM);
+	 {chan_closed, MM} ->
+	     chat_server ! {mm_closed, MM},
+	     exit(normal);
 	 {'EXIT', MM, _Why} ->
 	     chat_server ! {mm_closed, MM};
 	 Other ->

@@ -48,4 +48,13 @@ servidor na sua maquina, registra-se no servidor central como hospedeiro do grup
 login nesse grupo.
 Mesmo apos conectado com o grupo o cliente ainda mantem a conexao com o servidor de nomes
 pois eh este quem realiza a listagem de grupos.
+Para que a lista do servidor de nomes nao fique desatualizada, este lanca um processo que
+periodicamente abre uma conexao e fecha logo em seguida com cada um dos IPs cadastrados
+em sua lista. Aqueles que falharem a conexao sao removidos da lista de grupos conhecidos
+pelo servidor. Se nao tivessemos implementado isso, uma vez criado um grupo, caso o
+cliente que hospedava aquele grupo desconecte, outros cliente nao conseguiriam entrar
+ou criar novamente o grupo.
+
+
+
 

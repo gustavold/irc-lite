@@ -24,14 +24,36 @@ start_server() ->
     register(chat_server, 
 	     spawn(fun() ->
 			   process_flag(trap_exit, true),
+			   spawn(fun() -> keep_checking() end),
 			   Val= (catch server_loop([],[])),
 			   io:format("Server terminated with:~p~n",[Val])
 		   end)).
 
+keep_checking() ->
+    sleep(5000),
+    chat_server ! check_groups,
+    keep_checking().
+        
+sleep(T) ->
+    receive
+    after T -> true
+    end.
 
+check_groups([]) -> [];
+check_groups([{Group, Host}|Ns]) ->
+    case lib_chan:connect(Host, 2224, chat, "AsDT67aQ", []) of
+        {error, _Why} -> 
+	    check_groups(Ns);
+	{ok, MM} -> 
+	    lib_chan_mm:close(MM),
+	    [{Group, Host} | check_groups(Ns)]
+    end.
+	    
 
 server_loop(L,Ns) ->
     receive
+        check_groups ->
+	     server_loop(L, check_groups(Ns));
         {groups, C} ->
 	     lib_chan_mm:send(C, {groups, [G || {G, _} <- L]}),
 	     server_loop(L, Ns);

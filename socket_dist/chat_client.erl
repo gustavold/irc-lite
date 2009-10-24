@@ -27,8 +27,8 @@ test() ->
   %  connect("localhost", 2223, "AsDT67aQ", "general", "bbb"),
   %  connect("localhost", 2223, "AsDT67aQ", "fail", "ccc"),
   %  connect("localhost", 2223, "AsDT67aQ", "fail", "ddd"),
-    connect("localhost", 2223, "AsDT67aQ", "general", "jo").
-  %  connect("localhost", 2223, "AsDT67aQ", "fail", "sue").
+  %  connect("localhost", 2223, "AsDT67aQ", "general", "jo").
+    connect("localhost", 2223, "AsDT67aQ", "fail", "sue").
 	   
 
 connect(Host, Port, HostPsw, Group, Nick) ->
