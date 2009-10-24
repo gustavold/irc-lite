@@ -37,12 +37,15 @@ MELHORIAS ADICIONADAS
 1. Side panel, contendo lista de usuários,
 2. Comando /who que lista todas as pessoas de um grupo,
 3. Comando /list que lista todos os grupos,
-4. Comando /priv {destinatário} que manda mensagem privada para o destinatário
+4. Comando /priv <destinatário> <msg> que manda mensagem privada para o destinatário
 5. Controle do grupo se encontra na máquina do primeiro usuário que entra no grupo. 
 
-A primeira coisa que o cliente faz é conectar com o servidor principal e fazer um lookup para 
-saber qual o ip da máquina que esta hospedando o grupo em questão. Em seguida o cliente abre
-uma nova conexão com esse ip e faz login no grupo.
+A primeira coisa que o cliente faz é conectar com o servidor principal (Name Server ou Ns) e 
+fazer um lookup para saber qual o ip da máquina que estah hospedando o grupo em questão.
+Em seguida o cliente abre uma conexão com o ip devolvido e faz login no grupo.
 No caso em que o grupo não existe, o lookup responde 'notfound' e o cliente levanta um
-servidor na sua maquina, registrando-se no servidor central como hospedeiro do grupo e logando
-nesse grupo.
+servidor na sua maquina, registra-se no servidor central como hospedeiro do grupo e faz
+login nesse grupo.
+Mesmo apos conectado com o grupo o cliente ainda mantem a conexao com o servidor de nomes
+pois eh este quem realiza a listagem de grupos.
+
