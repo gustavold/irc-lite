@@ -68,75 +68,77 @@ wait_lookup_response(Widget, MM, Group, Nick, Pwd) ->
 	    spawn(chat_server, start, ["group.conf"]),
 	    start_connector("localhost", 2224, Pwd),
 	    lib_chan_mm:send(MM, {register_group, Group, os:getenv("chat_host")}),
-	    joining_group(Widget, Group, Nick); 
+	    joining_group(Widget, MM, Group, Nick); 
         {chan, MM, {lookup, Group, Host}} -> 
 	    io:format("lookup response: ~p found: ~p~n",[Group,Host]), 
 	    start_connector(Host, 2224, Pwd),
-	    joining_group(Widget, Group, Nick);
+	    joining_group(Widget, MM, Group, Nick);
 	Other -> 
 	    io:format("chat_client lookup unexpected:~p~n",[Other]),
 	    wait_lookup_response(Widget,  MM, Group, Nick, Pwd)
     end.
 
-joining_group(Widget, Group, Nick) ->
+joining_group(Widget, Ns, Group, Nick) ->
     receive
 	{connected, MM} ->
 	    insert_str(Widget, "connected to group\nsending data\n"),
 	    lib_chan_mm:send(MM, {login, Group, Nick}),
-	    wait_login_response(Widget, MM);
+	    wait_login_response(Widget, Ns, MM);
 	{Widget, destroyed} ->
 	    exit(died);
 	{status, S} ->
 	    insert_str(Widget, to_str(S)),
-	    joining_group(Widget, Group, Nick);
+	    joining_group(Widget, Ns, Group, Nick);
 	Other ->
 	    io:format("chat_client disconnected unexpected:~p~n",[Other]),
-	    joining_group(Widget, Group, Nick)
+	    joining_group(Widget, Ns, Group, Nick)
     end.
 
 
 
-wait_login_response(Widget, MM) ->
+wait_login_response(Widget, Ns, MM) ->
     receive
 	{chan, MM, ack} ->
-	    active(Widget, MM);
+	    active(Widget, Ns, MM);
 	Other ->
 	    io:format("chat_client login unexpected:~p~n",[Other]),
-	    wait_login_response(Widget, MM)
+	    wait_login_response(Widget, Ns, MM)
     end. 
 
 
 
-active(Widget, MM) ->
+active(Widget, Ns, MM) ->
      receive
      	 {Widget, _Nick, {groups}} ->
-	     lib_chan_mm:send(MM, {groups}),
-	     active(Widget, MM);
+	     lib_chan_mm:send(Ns, {groups}),
+	     active(Widget, Ns, MM);
      	 {Widget, _Nick, {listar}} ->
 	     lib_chan_mm:send(MM, {listar}),
-	     active(Widget, MM);
+	     active(Widget, Ns, MM);
 	 {Widget, Nick, {relay, Msg}} ->
 	     lib_chan_mm:send(MM, {relay, Nick, Msg}),
-	     active(Widget, MM);
+	     active(Widget, Ns, MM);
 	 {Widget, Nick, {priv, Dst, Str}} ->
 	     lib_chan_mm:send(MM, {private, Nick, Dst, Str}),
-	     active(Widget, MM);
-	 {chan, MM, {groups, L}} ->
+	     active(Widget, Ns, MM);
+	 {chan, Ns, {groups, L}} ->
 	     group_list(Widget, L),
-	     active(Widget, MM);
+	     active(Widget, Ns, MM);
 	 {chan, MM, {listar, L}} ->
 	     update_user_list(Widget, L),
-	     active(Widget, MM);
+	     active(Widget, Ns, MM);
 	 {chan, MM, {msg, From, Pid, Str}} ->
 	     insert_str(Widget, [From,"@",pid_to_list(Pid)," ", Str, "\n"]),
-	     active(Widget, MM);
+	     active(Widget, Ns, MM);
 	 {'EXIT',Widget,windowDestroyed} ->
 	     lib_chan_mm:close(MM);
 	 {close, MM} ->
 	     exit(serverDied);
+	 {close, Ns} ->
+	     exit(serverDied);
 	 Other ->
 	     io:format("chat_client active unexpected:~p~n",[Other]),
-	     active(Widget, MM)
+	     active(Widget, Ns, MM)
      end. 
 
 
