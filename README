@@ -1,0 +1,48 @@
+Exercício-Programa 1: Melhorias no IRC Lite do Armstrong
+
+Grupo:   	Gustavo Luis Duarte 		NUsp: 6650494
+			Marcio Vinicius dos Santos 	NUsp: 5146346
+
+
+ESTRUTURA DO ARQUIVO			
+			
+A estrutura dos arquivos contidos nesse Ep encontram-se no mesmo formato extraído do 
+site do armstrong.
+
+irc-lite/ 				contém depedências necessárias para executar o chat.
+irc-lite/socket_dist/	código do chat, lib_chan e arquivos de configuração.
+
+
+GERAÇÃO DO PROGRAMA
+
+O processo de geração do programa e similar ao do chat original, a única diferença é que é 
+preciso configurar uma variável de ambiente com o ip: 
+
+export chat_host=<Endereço de ip>
+
+cd irc-lite/
+make
+cd socket_dist/
+
+LEVANTANDO O CHAT_SERVER
+
+make chat_server
+
+EXECUTANDO O CLIENTE
+
+make chat_client
+
+MELHORIAS ADICIONADAS
+
+1. Side panel, contendo lista de usuários,
+2. Comando /who que lista todas as pessoas de um grupo,
+3. Comando /list que lista todos os grupos,
+4. Comando /priv {destinatário} que manda mensagem privada para o destinatário
+5. Controle do grupo se encontra na máquina do primeiro usuário que entra no grupo. 
+
+A primeira coisa que o cliente faz é conectar com o servidor principal e fazer um lookup para 
+saber qual o ip da máquina que esta hospedando o grupo em questão. Em seguida o cliente abre
+uma nova conexão com esse ip e faz login no grupo.
+No caso em que o grupo não existe, o lookup responde 'notfound' e o cliente levanta um
+servidor na sua maquina, registrando-se no servidor central como hospedeiro do grupo e logando
+nesse grupo.
